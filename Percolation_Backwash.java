@@ -1,6 +1,6 @@
 
 public class Percolation {
-    private int[][] flag; //0 blocked, 1 open
+    private int[] flag; //flag for all N*N sites, 0 blocked, 1 open
     private int N; //size of board
     private WeightedQuickUnionUF uf;
     private int idx_top, idx_bot;
@@ -8,11 +8,9 @@ public class Percolation {
         if (N <= 0)
             throw new IllegalArgumentException("N should be positive!");
         this.N = N;
-        flag = new int[N][N];
+        flag = new int[N*N];
         for (int i = 0; i < N; ++i) {
-            for (int j = 0; j < N; ++j) {
-                flag[i][j] = 0; //blocked
-            }
+            flag[i] = 0; //blocked
         }
         uf = new WeightedQuickUnionUF(N*N+2);
         idx_top = 0;
@@ -21,8 +19,9 @@ public class Percolation {
 
     public void open(int i, int j)  {        // open site (row i, column j) if it is not open already
         if (isOpen(i, j)) return;
-        flag[i-1][j-1] = 1;
         int idx = index(i, j);
+        flag[idx] = 1;
+        
         if (i == 1) uf.union(idx, idx_top);
         if (i == N) uf.union(idx, idx_bot); //N could be 1
 
@@ -47,7 +46,8 @@ public class Percolation {
 
     public boolean isOpen(int i, int j)  {   // is site (row i, column j) open?
         validate(i, j);
-        return (flag[i-1][j-1] == 1);
+        int idx = index(i, j);
+        return flag[idx] == 1;
     }
     public boolean isFull(int i, int j)  {    // is site (row i, column j) full?
         return isOpen(i, j) && uf.connected(index(i, j), idx_top); 
