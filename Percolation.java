@@ -17,13 +17,13 @@ public class Percolation {
         uf = new WeightedQuickUnionUF(N*N);
     }
 
-    public void open(int i, int j)  {        // open site (row i, column j) if it is not open already
+    public void open(int i, int j)  { // open site (row i, column j) if it is not open already
         if (isOpen(i, j)) return;
         int idx = index(i, j);
-        flag[idx] |= 1;
+        flag[idx] |= 1; //open
 
-        if (i == 1) flag[idx] |= 2;
-        if (i == N) flag[idx] |= 4;
+        if (i == 1) flag[idx] |= 2; //connect to top
+        if (i == N) flag[idx] |= 4; //connet to bottom
 
         int p = uf.find(idx);
 
@@ -83,7 +83,7 @@ public class Percolation {
     }
 
     public boolean isFull(int i, int j)  {    // is site (row i, column j) full?
-        if (! isOpen(i, j)) return false;
+        if (!isOpen(i, j)) return false;
         int idx = index(i, j);
         int p = uf.find(idx); //parent
         return ((flag[p] & 2) != 0);
