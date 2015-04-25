@@ -21,13 +21,13 @@ public class PercolationStats {
         return sum / T;
     }
     public double stddev()   {                 // sample standard deviation of percolation threshold
-        if(T == 1) return Double.NaN;
+        if (T == 1) return Double.NaN;
         double sum = 0.0;
         double avg = mean();
         for (int t = 0; t < T; ++t) {
             sum += (frac[t] - avg)*(frac[t] -avg);
         }
-        return sum / (T-1);
+        return Math.sqrt(sum / (T-1));
     }
     public double confidenceLo()  {            // low  endpoint of 95% confidence interval
         return mean() - 1.96*stddev()/Math.sqrt(T);
