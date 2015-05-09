@@ -25,26 +25,19 @@ public class Fast {
             Arrays.sort(pts, i, N); //sort pts[i .. N) in natural order
             Arrays.sort(pts, i, N, pts[i].SLOPE_ORDER); //sort pts[i..N) in slope order w.r.t pts[i]
             //search in pts[i+1..N) four >=3 consecutively equal slopes
-            int count = 0; //count
-            double slope = Double.NEGATIVE_INFINITY; //"self-slope"
-            for (j = i+1; j < N; ++j) { //find 3 points in a row forming the same slope w.r.t pts[i]
-                double newslope = pts[i].slopeTo(pts[j]);
-                if (newslope == slope) count++;
-                else {
-                    //only save if it is not searched before
-                    if (count >= 3 && !duplicated(pts, i, slope)) { 
-                        Arrays.sort(pts, j-count, j); //sort pts[j-count, j)
-                        printCollinear(pts, i, j-count, j-1);
-                    }
-                    count = 1; //update count
-                    slope = newslope; //update slope
+            j = i+1;            
+            while (j < N) {
+                double slope = pts[i].slopeTo(pts[j]);
+                int oldj = j;
+                while (j < N-1 && pts[i].slopeTo(pts[j+1]) == slope) j++;
+                //pts[oldj, j] are points with equal slopes w.r.t pts[i]
+                if(j - oldj >= 2 && !duplicated(pts, i, slope)) {
+                    Arrays.sort(pts, oldj, j+1); //sort pts[j-count, j] for printing
+                    printCollinear(pts, i, oldj, j);
                 }
-            }
-            //after existing j loop, check last one!
-            if (count >= 3 && !duplicated(pts, i, slope)) {
-                Arrays.sort(pts, j-count, j);
-                printCollinear(pts, i, j-count, j-1);
-            }            
+                oldj = j;
+                j++;                
+            }        
         }
         //draw points
         StdDraw.setPenRadius(.01);
