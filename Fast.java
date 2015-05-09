@@ -20,42 +20,55 @@ public class Fast {
         StdDraw.setYscale(0, 32768);
         StdDraw.setPenRadius(.005);
         StdDraw.setPenColor(StdDraw.RED);
-
         int i, j;
-        for (i = 0; i < N; ++i) { //pts[i] as p
-            Arrays.sort(pts, i, N); //first sort natural order
-            Arrays.sort(pts, i, N, pts[i].SLOPE_ORDER); //sort pts[i..N)
-            int count = 1;
-            for (j = i+1; j < N; ++j) { //find 3 points in a row with same slope
-                if (pts[i].slopeTo(pts[j]) == pts[i].slopeTo(pts[j-1])) count++;
+        for (i = 0; i < N; ++i) { // pts[i] as reference point
+            Arrays.sort(pts, i, N); //sort pts[i .. N) in natural order
+            Arrays.sort(pts, i, N, pts[i].SLOPE_ORDER); //sort pts[i..N) in slope order w.r.t pts[i]
+            //search in pts[i+1..N) four >=3 consecutively equal slopes
+            int count = 0; //count
+            double slope = Double.NEGATIVE_INFINITY; //"self-slope"
+            for (j = i+1; j < N; ++j) { //find 3 points in a row forming the same slope w.r.t pts[i]
+                double newslope = pts[i].slopeTo(pts[j]);
+                if (newslope == slope) count++;
                 else {
-                    if (count >= 3) {
-                        Arrays.sort(pts, j-count, j);
-                        StdOut.print(pts[i] + " -> ");
-                        for (int k = j-count; k < j; ++k) {
-                            if (k != j-1) StdOut.print(pts[k] + " -> ");
-                            else StdOut.print(pts[k] + "\n");
-                        }   
-                        pts[i].drawTo(pts[j-1]);
-                        //   StdOut.println("draw (" + pts[i] + " " + pts[j-1] + ")");
+                    //only save if it is not searched before
+                    if (count >= 3 && !duplicated(pts, i, slope)) { 
+                        Arrays.sort(pts, j-count, j); //sort pts[j-count, j)
+                        printCollinear(pts, i, j-count, j-1);
                     }
-                    count = 1;
+                    count = 1; //update count
+                    slope = newslope; //update slope
                 }
             }
-            if (count >= 3) {
+            //after existing j loop, check last one!
+            if (count >= 3 && !duplicated(pts, i, slope)) {
                 Arrays.sort(pts, j-count, j);
-                StdOut.print(pts[i] + " -> ");
-                for (int k = j-count; k < j; ++k) {
-                    if (k != j-1) StdOut.print(pts[k] + " -> ");
-                    else StdOut.print(pts[k] + "\n");
-                }     
-                pts[i].drawTo(pts[j-1]);    
-                //   StdOut.println("draw (" + pts[i] + " " + pts[j-1] + ")");
-            }
+                printCollinear(pts, i, j-count, j-1);
+            }            
         }
+        //draw points
         StdDraw.setPenRadius(.01);
         StdDraw.setPenColor(StdDraw.BLACK);
         for (i = 0; i < N; ++i) 
             pts[i].draw();
+    }
+
+    //search points before i for a given slope
+    private static boolean duplicated(Point[] pts, int i, double slope)  {
+        for (int k = 0; k < i; ++k) {
+            if (pts[k].slopeTo(pts[i]) == slope)
+                return true;
+        }
+        return false;
+    }
+
+    //print and draw points i -> j1 -> j1+1 -> ... -> j2
+    private static void printCollinear(Point[] pts, int i, int j1, int j2) {
+        StdOut.print(pts[i] + " -> ");
+        for (int k = j1; k <= j2; ++k) {
+            if (k != j2) StdOut.print(pts[k] + " -> ");
+            else StdOut.print(pts[k] + "\n");
+        }     
+        pts[i].drawTo(pts[j2]);    
     }
 }
