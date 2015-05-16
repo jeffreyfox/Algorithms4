@@ -2,6 +2,7 @@
 public class KdTree {
     private Node root;
     private int N; //count
+    private Point2D nbr; //neareest neighbor
 
     private class Node {
         private Point2D p; //point
@@ -132,44 +133,32 @@ public class KdTree {
     // a nearest neighbor in the set to point p; null if the set is empty
     public Point2D nearest(Point2D p)  { 
         if (p == null) throw new NullPointerException("Argument is null!");
-        double mind = Double.MAX_VALUE;
-        return nearest(p, root, 0, mind);   
+        if (root == null) return null;
+        nbr = root.p;
+        nearest(p, root, 0);
+        return nbr;
     }
 
     //pi input point, pass reference to nearest distance
-    private Point2D nearest(Point2D pi, Node t, int l, double mind) { 
-        if (t == null) return null;
-        Point2D nbr = null; // nearest neighbor to return
-        Point2D p = t.p;
-        double d = pi.distanceSquaredTo(p);     
-        if (d < mind) {
-            mind = d; 
-            nbr = p;
-        }
+    private void nearest(Point2D pi, Node t, int l) { 
+        if (t == null) return;
 
-        Point2D p1, p2;
-        double d1 = Double.MAX_VALUE;
-        double d2 = Double.MAX_VALUE;
-        if (t.left != null)  d1 = t.left.box.distanceSquaredTo(pi);
-        if (t.right != null) d2 = t.right.box.distanceSquaredTo(pi);
-        double tmp = 0.0;
-        if (d1 < mind) { //only proceed when d1 < mind
-            p1 = nearest(pi, t.left, l+1, mind);
-            tmp = (p1 == null) ? Double.MAX_VALUE : p1.distanceSquaredTo(pi);
-            if (tmp < mind) {
-                mind = tmp; 
-                nbr = p1;
-            }     
-        }
-        if (d2 < mind) {
-            p2 = nearest(pi, t.right, l+1, mind);
-            tmp = (p2 == null) ? Double.MAX_VALUE : p2.distanceSquaredTo(pi);
-            if (tmp < mind) {
-                mind = tmp; 
-                nbr = p2;
-            }
-        }
-        return nbr;
+        Point2D p = t.p;
+        double mind = pi.distanceSquaredTo(nbr);   
+        double d = pi.distanceSquaredTo(p);     
+        if (d < mind)  nbr = p;
+
+        if (t.box.distanceSquaredTo(pi) >= mind) return;
+
+        if ( (l % 2 == 0 && pi.x() < p.x()) || (l % 2 == 1 && pi.y() < p.y())) {
+            //left first
+            nearest(pi, t.left,  l+1);
+            nearest(pi, t.right, l+1);
+        } else {
+            //right first
+            nearest(pi, t.right, l+1);
+            nearest(pi, t.left,  l+1);            
+        }      
     }
 
     // unit testing of the methods (optional)
