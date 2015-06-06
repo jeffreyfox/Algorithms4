@@ -7,11 +7,11 @@ public class SeamCarver {
 	private double[][] energy; //energy for each pixels
 	private double[][] totE; //total energy from start to this pixel
 	private int[][] parentOffset; //offset (-1/0/1) of parent
-	private int[] seam; //seam
 
 	// create a seam carver object based on the given picture
 	public SeamCarver(final Picture picture)  {  
 		this.picture = new Picture(picture);
+
 		this.W = picture.width();
 		this.H = picture.height();
 		this.energy = new double[W][H];
@@ -52,16 +52,8 @@ public class SeamCarver {
 	}
 
 	public   int[] findHorizontalSeam() {
-		calcHSeam(); //calculate horizontal seam
-		return seam;
-	}
-	// sequence of indices for vertical seam
-	public   int[] findVerticalSeam() {
-		calcVSeam();
-		return seam;
-	}
-	//calculate horizontal seam
-	private void calcHSeam() {
+		int[] seam = new int[W];
+
 		//first col	
 		for (int h = 0; h < H; ++h) 
 			totE[0][h] = energy[0][h];
@@ -95,12 +87,14 @@ public class SeamCarver {
 			minH = minH + parentOffset[w][minH];
 			seam[--w] = minH;
 		}
-		/*		if(!isLegalHSeam(seam)) {
+		if(!isLegalHSeam(seam)) {
 			throw new RuntimeException("Calculated horizontal seam is wrong!");
-		} */
+		} 	
+		return seam;
 	}
-	//calculate vertical seam
-	private void calcVSeam() {
+	// sequence of indices for vertical seam
+	public   int[] findVerticalSeam() {
+		int[] seam = new int[H];
 		//first row	
 		for (int w = 0; w < W; ++w) 
 			totE[w][0] = energy[w][0];
@@ -134,46 +128,65 @@ public class SeamCarver {
 			minW = minW + parentOffset[minW][h];
 			seam[--h] = minW;
 		}
-		/*		if(!isLegalVSeam(seam)) {
-			throw new RuntimeException("Calculated vertical seam is wrong!");
-		} */
+		return seam;
 	}
 
 	// remove horizontal seam from current picture
 	public    void removeHorizontalSeam(int[] seam) {
 		if (seam == null) 
 			throw new NullPointerException();
-		if (W <= 1) 
-			throw new IllegalArgumentException("width <= 1");
+		if (H <= 1) 
+			throw new IllegalArgumentException("height <= 1");
 		if (!isLegalHSeam(seam)) 
 			throw new IllegalArgumentException("Illegal horizontal seam");
+		Picture newpic = new Picture(W, --H);
+
+		for (int h = 0; h < H; ++h)
+			for (int w = 0; w < W; ++w) {
+				Color c;
+				if ( h < seam[w]) c = picture.get(w, h);
+				else c = picture.get(w, h+1);
+				newpic.set(w, h, c);
+			}
+		picture = newpic;
 	}
 	// remove vertical seam from current picture
 	public    void removeVerticalSeam(int[] seam) {
 		if (seam == null) 
 			throw new NullPointerException();
-		if (H <= 1) 
-			throw new IllegalArgumentException("height <= 1");
+		if (W <= 1) 
+			throw new IllegalArgumentException("width <= 1");
 		if (!isLegalVSeam(seam)) 
 			throw new IllegalArgumentException("Illegal vertical seam");
+		Picture newpic = new Picture(--W, H);
+		for (int h = 0; h < H; ++h)
+			for (int w = 0; w < W; ++w) {
+				Color c;
+				if ( w < seam[h]) c = picture.get(w, h);
+				else c = picture.get(w+1, h);
+				newpic.set(w, h, c);
+			}
+		picture = newpic;
 	}
+
 	private boolean isLegalHSeam(int[] seam) {
 		if (seam.length != W) return false;
 		for (int w = 0; w < seam.length; ++w) {
 			//out of box
-			if (seam[w] < 0 || seam[w] >= W) return false;
-			//not ajacent
+			if (seam[w] < 0 || seam[w] >= H) return false;
+			//not adjacent
 			if (w > 0 && Math.abs(seam[w] - seam[w-1]) > 1) return false;
 			if (w < W-1 && Math.abs(seam[w] - seam[w+1]) > 1) return false;
 		}
 		return true;		
 	}
 	private boolean isLegalVSeam(int[] seam) {
+
 		if (seam.length != H) return false;
 		for (int h = 0; h < seam.length; ++h) {
 			//out of box
-			if (seam[h] < 0 || seam[h] >= H) return false;
-			//not ajacent
+			if (seam[h] < 0 || seam[h] >= W) return false;
+			//not adjacent
 			if (h > 0 && Math.abs(seam[h] - seam[h-1]) > 1) return false;
 			if (h < H-1 && Math.abs(seam[h] - seam[h+1]) > 1) return false;
 		}
