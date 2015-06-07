@@ -5,8 +5,6 @@ public class SeamCarver {
 	private int W, H; //width and height of picture
 	private Color[][] c; //colors of each pixel
 	private double[][] E; //energy for each pixels
-	private double[][] Ea; // accumulated energy from start to this pixel
-	private int[][] os; //offset (-1/0/1) of parent	
 
 	// create a seam carver object based on the given picture
 	public SeamCarver(final Picture picture)  {  
@@ -15,8 +13,7 @@ public class SeamCarver {
 		H = picture.height();
 		c = new Color[H][W]; //row major
 		E = new double[H][W]; 		
-		Ea = new double[H][W];
-		os = new int[H][W];		
+
 		//first pass init color matrix
 		for (int ir = 0; ir < H; ++ir)
 			for (int jc = 0; jc < W; ++jc)
@@ -48,6 +45,11 @@ public class SeamCarver {
 
 	// sequence of indices for vertical seam
 	public   int[] findVerticalSeam() {
+		double[][] Ea; // accumulated energy from start to this pixel
+		int[][] os; //offset (-1/0/1) of parent	
+		Ea = new double[H][W];
+		os = new int[H][W];		
+
 		int[] seam = new int[H];
 		// Ea for the first row
 		for (int jc = 0; jc < W; ++jc) 
@@ -93,56 +95,19 @@ public class SeamCarver {
 			throw new IllegalArgumentException("width <= 1");
 		if (!isLegalVSeam(seam)) 
 			throw new IllegalArgumentException("Illegal vertical seam");
-		StdOut.println("remove W = " + W);
-		for (int ir = 0; ir < W; ++ir) {
+
+		for (int ir = 0; ir < H; ++ir) {
 			int j = seam[ir];
 			//shift pixels after seam line to left by 1
 			System.arraycopy(c[ir], j+1, c[ir], j, W-1-j);
 			System.arraycopy(E[ir], j+1, E[ir], j, W-1-j);
-			System.arraycopy(Ea[ir], j+1, Ea[ir], j, W-1-j);			
-			System.arraycopy(os[ir], j+1, os[ir], j, W-1-j);
 		}
 		W--;
 	}
-	public   int[] findHorizontalSeam() {
-		int[] seam = new int[W];
-
-		//first col	
-		for (int h = 0; h < H; ++h) 
-			Ea[0][h] = E[0][h];
-
-		for (int w = 1; w < W; ++w) {
-			for (int h = 0; h < H; ++h) {
-				int j = 0;
-				if (h > 0 && Ea[w-1][h-1] < Ea[w-1][h+j])
-					j = -1;
-				if (h < H-1 && Ea[w-1][h+1] < Ea[w-1][h+j])
-					j =  1;
-				os[w][h] = j;
-				Ea[w][h] = Ea[w-1][h+j] + E[w][h];
-			}
-		}	
-
-		//find the pixel in the last row with minimum Ea
-		int minH = 0;
-		double minE = Ea[W-1][0];
-		for (int h = 1; h < H; ++h)
-			if (Ea[W-1][h] < minE) {
-				minE = Ea[W-1][h];
-				minH = h;
-			}
-
-		//construct seam from minIdx
-		seam = new int[W];
-		int w = W-1;
-		seam[W-1] = minH;
-		while (w > 0) {
-			minH = minH + os[w][minH];
-			seam[--w] = minH;
-		}
-		if(!isLegalHSeam(seam)) {
-			throw new RuntimeException("Calculated horizontal seam is wrong!");
-		} 	
+	public   int[] findHorizontalSeam() {		
+		transpose();
+		int[] seam = findVerticalSeam();
+		transpose();
 		return seam;
 	}
 
@@ -154,6 +119,9 @@ public class SeamCarver {
 			throw new IllegalArgumentException("height <= 1");
 		if (!isLegalHSeam(seam)) 
 			throw new IllegalArgumentException("Illegal horizontal seam");
+		transpose();
+		removeVerticalSeam(seam);
+		transpose();
 	}
 
 	private boolean isLegalHSeam(int[] seam) {
@@ -188,12 +156,27 @@ public class SeamCarver {
 		Color cr = c[x+1][y]; //right
 		Color ct = c[x][y-1]; //top
 		Color cb = c[x][y+1]; //bottom
-		return (double) 
-				Math.pow((cl.getRed()   - cr.getRed()  ), 2) +
-				Math.pow((cl.getGreen() - cr.getGreen()), 2) +
-				Math.pow((cl.getBlue()  - cr.getBlue() ), 2) +
-				Math.pow((ct.getRed()   - cb.getRed()  ), 2) +
-				Math.pow((ct.getGreen() - cb.getGreen()), 2) +
-				Math.pow((ct.getBlue()  - cb.getBlue() ), 2);
+		double dxR = Math.pow((cl.getRed()   - cr.getRed()  ), 2);
+		double dxG = Math.pow((cl.getGreen() - cr.getGreen()), 2);
+		double dxB = Math.pow((cl.getBlue()  - cr.getBlue() ), 2);
+		double dyR = Math.pow((ct.getRed()   - cb.getRed()  ), 2);
+		double dyG = Math.pow((ct.getGreen() - cb.getGreen()), 2);
+		double dyB = Math.pow((ct.getBlue()  - cb.getBlue() ), 2);
+		return dxR + dxG + dxB + dyR + dyG + dyB;
+	}			
+
+	private void transpose() {
+		Color[][] newc = new Color[W][H];	
+		double[][] newE = new double[W][H];
+		for (int ir = 0; ir < W; ++ir) {
+			for (int jc = 0; jc < H; ++jc) {
+				newc[ir][jc] = c[jc][ir];
+				newE[ir][jc] = E[jc][ir]; 	
+			}
+		}
+		c = newc;
+		E = newE;
+		//swap H and W
+		int tmp = H; H = W; W = tmp;		
 	}
 }
