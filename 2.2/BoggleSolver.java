@@ -1,7 +1,7 @@
 
 public class BoggleSolver
 {
-    private TST<Integer> dict;
+    private Trie<Integer> dict;
     private boolean[][] marked;
     private int m, n;
     private SET<String> q;
@@ -9,7 +9,7 @@ public class BoggleSolver
     // Initializes the data structure using the given array of strings as the dictionary.
     // (You can assume each word in the dictionary contains only the uppercase letters A through Z.)
     public BoggleSolver(String[] dictionary) {
-        dict = new TST<Integer>();
+        dict = new Trie<Integer>();
         for (String s : dictionary)
             dict.put(s, 0);
     }
@@ -34,6 +34,12 @@ public class BoggleSolver
         marked[i][j] = true;
         char c = board.getLetter(i, j);
         String s = pre + ((c == 'Q') ? "QU" : c);
+
+        if (!dict.containsPrefix(s)) { 
+            marked[i][j] = false; 
+            return; 
+        }
+
         if (s.length() >= 3 && dict.contains(s)) q.add(s); //find one word
         
         //now do it for 8 neighbors:
